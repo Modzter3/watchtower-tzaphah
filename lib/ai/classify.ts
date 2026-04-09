@@ -24,13 +24,13 @@ export async function classifyArticle(
 CRITICAL: You must use EXACTLY these keys in your JSON response (camelCase):
 - propheticSummary
 - categories
-- urgencyLevel (Must be: COVENANT_ALARM, SIGNIFICANT_SIGN, WORTHY_OF_WATCH, or MONITORING)
+- urgencyLevel (Choose one: COVENANT_ALARM, SIGNIFICANT_SIGN, WORTHY_OF_WATCH, MONITORING)
 - urgencyReason
 - scriptureReferences (Array of objects with: reference, verseText, relevanceNote, book, chapter, verseStart, verseEnd, isApocrypha)
 - apocryphaReferences (Same structure as scriptureReferences)
 - geolocation (Object with: country, city, region, lat, lng)
-  * region MUST be one of: MIDDLE_EAST, THE_MOTHERLAND, EUROPE, THE_AMERICAS, ASIA_EAST, GLOBAL_SYSTEMIC
-- propheticTimelinePlacement (Must be: SIGNS_OF_THE_TIMES, LATTER_DAYS_NOW, ISRAELS_RESTORATION, BEAST_SYSTEM_RISING, THE_SCATTERING_CONTINUES, or NATIONS_IN_COMMOTION)
+  * region MUST be exactly one of: MIDDLE_EAST, THE_MOTHERLAND, EUROPE, THE_AMERICAS, ASIA_EAST, GLOBAL_SYSTEMIC
+- propheticTimelinePlacement (Choose one: SIGNS_OF_THE_TIMES, LATTER_DAYS_NOW, ISRAELS_RESTORATION, BEAST_SYSTEM_RISING, THE_SCATTERING_CONTINUES, NATIONS_IN_COMMOTION, UNKNOWN)
 - watchLevel (Number 1-10)
 - deuteronomy28Connection
 - isApocryphaConnected (Boolean)

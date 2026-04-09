@@ -8,7 +8,7 @@ import type { UrgencyLevel } from "@/lib/types/article";
 
 export const maxDuration = 300;
 
-const BATCH = 4; // Reduced from 8 for safer timeouts on Vercel Hobby
+const BATCH = 6; // Increased back to 6 now that stability is higher
 
 function cronErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
