@@ -33,7 +33,7 @@ Return ONLY valid JSON, no additional text.`,
       },
     ],
     response_format: { type: "json_object" },
-    temperature: 0.6, // Slightly lower for more deterministic JSON
+    temperature: 0.3, // Much lower for stability
   });
 
   const rawJson = response.choices[0]?.message?.content;

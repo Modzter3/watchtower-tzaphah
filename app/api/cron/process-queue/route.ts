@@ -37,7 +37,7 @@ async function processFromDatabase(): Promise<number> {
   const { data: queued } = await supabase
     .from("articles")
     .select("id")
-    .eq("analysis_status", "QUEUED")
+    .in("analysis_status", ["QUEUED", "FAILED"]) // Retry failed ones too
     .order("created_at", { ascending: true })
     .limit(BATCH);
 

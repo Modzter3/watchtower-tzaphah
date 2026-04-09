@@ -41,10 +41,11 @@ function normalizeCategorySlug(raw: string): CategorySlug | null {
     }
   }
 
-  for (const c of PROPHETIC_CATEGORIES) {
-    const parts = c.slug.split("-").filter((p) => p.length > 2);
-    if (parts.length && parts.every((p) => s.includes(p))) return c.slug;
-  }
+  // Stronger normalization: try to match keywords or fragments if exact match fails
+  const foundByKeyword = PROPHETIC_CATEGORIES.find(c => 
+    c.keywords.some(k => s.includes(k.toLowerCase()))
+  );
+  if (foundByKeyword) return foundByKeyword.slug;
 
   return null;
 }
