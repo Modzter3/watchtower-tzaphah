@@ -10,7 +10,17 @@ function passthrough(_request: NextRequest, _event: NextFetchEvent) {
   return NextResponse.next();
 }
 
-export default hasClerk ? clerkMiddleware() : passthrough;
+/**
+ * Cron jobs send `Authorization: Bearer <CRON_SECRET>`. Clerk middleware would try to parse
+ * that as a Clerk session JWT and can throw → 500 with no JSON body. Skip Clerk for cron API.
+ */
+export default hasClerk
+  ? clerkMiddleware(async (_auth, req) => {
+      if (req.nextUrl.pathname.startsWith("/api/cron/")) {
+        return NextResponse.next();
+      }
+    })
+  : passthrough;
 
 export const config = {
   matcher: [
