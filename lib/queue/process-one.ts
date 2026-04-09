@@ -22,7 +22,10 @@ export async function processArticleClassification(
       article.headline as string,
       (article.full_content as string) || "",
     );
-    await persistPropheticAnalysis(supabase, articleId, analysis);
+    await persistPropheticAnalysis(supabase, articleId, analysis, {
+      headline: article.headline as string,
+      bodySnippet: (article.full_content as string) || "",
+    });
     return { ok: true };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Classification failed";

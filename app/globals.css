@@ -74,4 +74,16 @@
 
 .leaflet-container {
   font-family: var(--font-inter);
+  background: var(--color-background-base);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-background-elevated) !important;
+  color: var(--color-text-primary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px;
 }

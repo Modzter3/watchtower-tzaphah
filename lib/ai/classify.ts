@@ -5,6 +5,7 @@ import {
 import {
   HEBREW_ISRAELITE_SYSTEM_PROMPT,
   RELEVANCE_FILTER_PROMPT,
+  CLASSIFY_CATEGORY_SLUG_RULE,
 } from "@/lib/ai/prompts";
 import { getOpenAI } from "@/lib/ai/openai";
 
@@ -16,7 +17,10 @@ export async function classifyArticle(
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: HEBREW_ISRAELITE_SYSTEM_PROMPT },
+      {
+        role: "system",
+        content: `${HEBREW_ISRAELITE_SYSTEM_PROMPT}\n\n${CLASSIFY_CATEGORY_SLUG_RULE}`,
+      },
       {
         role: "user",
         content: `Analyze this article and return a JSON object matching the PropheticAnalysis schema:

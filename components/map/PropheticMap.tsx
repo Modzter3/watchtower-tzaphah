@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import type { ArticleWithRelations } from "@/lib/types/article";
 
 function FixIcons() {
@@ -20,20 +21,45 @@ function FixIcons() {
   return null;
 }
 
-function Recenter({ center }: { center: [number, number] }) {
+function Recenter({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
+
+/** Leaflet often measures 0×0 when mounted inside dynamic/layout; force a relayout. */
+function InvalidateSizeOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const run = () => map.invalidateSize();
+    run();
+    const id = requestAnimationFrame(run);
+    const t = window.setTimeout(run, 200);
+    return () => {
+      cancelAnimationFrame(id);
+      window.clearTimeout(t);
+    };
+  }, [map]);
   return null;
 }
 
 export function PropheticMap({ articles }: { articles: ArticleWithRelations[] }) {
   const points = useMemo(
     () =>
-      articles.filter(
-        (a) => typeof a.lat === "number" && typeof a.lng === "number",
-      ),
+      articles.filter((a) => {
+        const lat = a.lat;
+        const lng = a.lng;
+        return (
+          typeof lat === "number" &&
+          typeof lng === "number" &&
+          Number.isFinite(lat) &&
+          Number.isFinite(lng) &&
+          Math.abs(lat) <= 90 &&
+          Math.abs(lng) <= 180
+        );
+      }),
     [articles],
   );
 
@@ -44,15 +70,20 @@ export function PropheticMap({ articles }: { articles: ArticleWithRelations[] })
     return [lat, lng];
   }, [points]);
 
+  const zoom = points.length === 0 ? 2 : points.length === 1 ? 4 : 3;
+
   return (
+    <div className="relative z-0 h-[min(70vh,520px)] min-h-[420px] w-full overflow-hidden rounded-lg border border-accent-gold/20">
     <MapContainer
       center={center}
-      zoom={points.length ? 2 : 2}
-      className="h-[480px] w-full rounded-lg border border-accent-gold/20"
+      zoom={zoom}
+      className="h-full min-h-[420px] w-full bg-background-base"
       scrollWheelZoom
+      style={{ minHeight: 420 }}
     >
       <FixIcons />
-      <Recenter center={center} />
+      <InvalidateSizeOnMount />
+      <Recenter center={center} zoom={zoom} />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -68,14 +99,15 @@ export function PropheticMap({ articles }: { articles: ArticleWithRelations[] })
             fillOpacity: 0.35,
           }}
         >
-          <Popup>
-            <div className="max-w-xs text-text-primary">
-              <p className="font-semibold">{a.headline}</p>
-              <p className="text-xs text-text-secondary">{a.source_name}</p>
+          <Popup className="prophetic-map-popup">
+            <div style={{ maxWidth: 280, color: "#ede9d8" }}>
+              <p style={{ fontWeight: 600, margin: "0 0 4px" }}>{a.headline}</p>
+              <p style={{ fontSize: 12, opacity: 0.8, margin: 0 }}>{a.source_name}</p>
             </div>
           </Popup>
         </CircleMarker>
       ))}
     </MapContainer>
+    </div>
   );
 }
