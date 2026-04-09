@@ -29,3 +29,15 @@ export function urgencyToColor(level: UrgencyLevel | null | undefined): string {
   if (!level) return COLORS.urgency.MONITORING;
   return COLORS.urgency[level];
 }
+
+/** Dot / border color when urgency not set yet or pipeline state. */
+export function resolveArticleUrgencyColor(
+  urgency: UrgencyLevel | null | undefined,
+  analysisStatus: string | null | undefined,
+): string {
+  if (urgency) return urgencyToColor(urgency);
+  const s = analysisStatus ?? "";
+  if (s === "QUEUED" || s === "PENDING") return COLORS.accent.primary;
+  if (s === "FAILED") return COLORS.accent.crimson;
+  return COLORS.urgency.MONITORING;
+}

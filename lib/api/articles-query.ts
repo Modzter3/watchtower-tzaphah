@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { urgencyToColor } from "@/lib/utils/tzaphah";
+import { resolveArticleUrgencyColor } from "@/lib/utils/tzaphah";
 import type { ArticleWithRelations, UrgencyLevel } from "@/lib/types/article";
 import type { CategorySlug } from "@/lib/constants/categories";
 
@@ -65,7 +65,10 @@ export async function fetchArticlesEnriched(
       ...(row as ArticleWithRelations),
       categories: catByArticle.get(row.id as string) ?? [],
       scripture_references: refByArticle.get(row.id as string) ?? [],
-      urgency_color: urgencyToColor(urgency),
+      urgency_color: resolveArticleUrgencyColor(
+        urgency,
+        row.analysis_status as string,
+      ),
     };
   });
 }
@@ -97,6 +100,9 @@ export async function fetchArticleById(
     ...(row as ArticleWithRelations),
     categories: (cats ?? []).map((c) => c.category_slug as CategorySlug),
     scripture_references: refs ?? [],
-    urgency_color: urgencyToColor(urgency),
+    urgency_color: resolveArticleUrgencyColor(
+      urgency,
+      row.analysis_status as string,
+    ),
   };
 }

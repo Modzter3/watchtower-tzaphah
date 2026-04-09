@@ -1,94 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useState } from "react";
 import type { ArticleWithRelations } from "@/lib/types/article";
 import { ArticleCard } from "@/components/feed/ArticleCard";
 import { ArticleDrawer } from "@/components/feed/ArticleDrawer";
 import { Skeleton } from "@/components/ui/Skeleton";
-
-async function loadArticles(): Promise<{
-  articles: ArticleWithRelations[];
-  apiError: string | null;
-}> {
-  const r = await fetch("/api/articles?limit=50");
-  const d = (await r.json()) as {
-    articles?: ArticleWithRelations[];
-    message?: string;
-    error?: string;
-  };
-  if (!r.ok) {
-    return {
-      articles: [],
-      apiError: d.message ?? d.error ?? `HTTP ${r.status}`,
-    };
-  }
-  return { articles: d.articles ?? [], apiError: null };
-}
+import { useArticleData } from "@/components/providers/ArticleDataProvider";
 
 export function ArticleFeed() {
-  const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { articles, loading, apiError } = useArticleData();
   const [selected, setSelected] = useState<ArticleWithRelations | null>(null);
-
-  const silentRefresh = useCallback(() => {
-    loadArticles()
-      .then(({ articles: next, apiError: err }) => {
-        setArticles(next);
-        setApiError(err);
-      })
-      .catch(() => {
-        setArticles([]);
-        setApiError("Network error");
-      });
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadArticles()
-      .then(({ articles: data, apiError: err }) => {
-        if (!cancelled) {
-          setArticles(data);
-          setApiError(err);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setArticles([]);
-          setApiError("Network error");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let client: ReturnType<typeof createSupabaseBrowserClient> | null = null;
-    try {
-      client = createSupabaseBrowserClient();
-    } catch {
-      return;
-    }
-    const channel = client
-      .channel("articles-feed")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "articles" },
-        () => {
-          silentRefresh();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      client?.removeChannel(channel);
-    };
-  }, [silentRefresh]);
 
   if (loading) {
     return (
