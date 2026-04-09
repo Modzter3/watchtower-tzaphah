@@ -5,6 +5,7 @@ import {
 import {
   HEBREW_ISRAELITE_SYSTEM_PROMPT,
   RELEVANCE_FILTER_PROMPT,
+  RELEVANCE_FILTER_PROMPT_STRICT,
   CLASSIFY_CATEGORY_SLUG_RULE,
 } from "@/lib/ai/prompts";
 import { getOpenAI } from "@/lib/ai/openai";
@@ -65,11 +66,28 @@ Return ONLY the JSON object.`,
   return PropheticAnalysisSchema.parse(parsed);
 }
 
+function relevanceFromModelText(raw: string): boolean {
+  const t = raw.trim();
+  if (!t) return false;
+  const first = t.split(/\r?\n/).find((l) => l.trim().length > 0) ?? t;
+  const line = first.trim();
+  if (/^\s*NO\b/i.test(line)) return false;
+  if (/^\s*YES\b/i.test(line)) return true;
+  if (/\bNO\b/i.test(line) && !/\bYES\b/i.test(line)) return false;
+  if (/\bYES\b/i.test(line)) return true;
+  return false;
+}
+
 export async function isRelevant(
   headline: string,
   snippet: string,
+  options?: { strict?: boolean },
 ): Promise<boolean> {
   const openai = getOpenAI();
+  const userPrompt = options?.strict
+    ? RELEVANCE_FILTER_PROMPT_STRICT
+    : RELEVANCE_FILTER_PROMPT;
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -80,12 +98,12 @@ export async function isRelevant(
       },
       {
         role: "user",
-        content: `${RELEVANCE_FILTER_PROMPT}\n\nHeadline: ${headline}\n\nSnippet: ${snippet.slice(0, 2000)}`,
+        content: `${userPrompt}\n\nHeadline: ${headline}\n\nSnippet: ${snippet.slice(0, 2000)}`,
       },
     ],
-    temperature: 0.25,
+    temperature: 0.15,
   });
 
   const raw = response.choices[0]?.message?.content ?? "";
-  return /^\s*YES\b/i.test(raw);
+  return relevanceFromModelText(raw);
 }

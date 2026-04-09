@@ -12,7 +12,17 @@ Always cite specific scripture with chapter and verse, including from the Apocry
 
 Return your analysis strictly as valid JSON conforming exactly to the schema provided. Do not include any text outside the JSON object.`;
 
-export const RELEVANCE_FILTER_PROMPT = `You filter news for a Hebrew Israelite prophetic watch platform. Answer YES only if the story plausibly connects to biblical prophecy or covenant themes, such as: wars and military conflict; Israel, Jerusalem, Gaza, or the broader Middle East; natural disasters, disease, famine, or extreme weather; global governance, digital ID, CBDCs, or economic control; persecution or injustice against scattered Israel / Black communities; deception, false religion, or spiritual confusion; signs in the heavens; gospel spread or awakening movements; northern coalitions or major power blocs tied to prophecy.
+/** Default: inclusive — process-queue can still downgrade or MONITORING. */
+export const RELEVANCE_FILTER_PROMPT = `You filter news for a Hebrew Israelite prophetic watch platform.
+
+Answer YES if the story could matter for covenant watch in any plausible way: wars, nations, Israel/Middle East, diaspora, Africa, Caribbean, US/UK/EU policy, justice, policing, health, economy, banks/CBDC/digital ID, disasters, weather, faith, religion, deception, space/science with public impact, major tech or governance, migration, or awakening/identity movements. When unsure, answer YES.
+
+Answer NO only for clearly trivial feed noise: celebrity gossip, sports scores, entertainment promos, product reviews, pure lifestyle/viral fluff, or spam with no real public event.
+
+Respond with only YES or NO.`;
+
+/** Set CRON_STRICT_RELEVANCE=1 on Vercel to use this (fewer inserts). */
+export const RELEVANCE_FILTER_PROMPT_STRICT = `You filter news for a Hebrew Israelite prophetic watch platform. Answer YES only if the story plausibly connects to biblical prophecy or covenant themes, such as: wars and military conflict; Israel, Jerusalem, Gaza, or the broader Middle East; natural disasters, disease, famine, or extreme weather; global governance, digital ID, CBDCs, or economic control; persecution or injustice against scattered Israel / Black communities; deception, false religion, or spiritual confusion; signs in the heavens; gospel spread or awakening movements; northern coalitions or major power blocs tied to prophecy.
 
 Answer NO for celebrity gossip, routine sports, pure entertainment, product ads, local crime with no wider prophetic angle, or stories with no reasonable link to scripture or end-times watch themes.
 

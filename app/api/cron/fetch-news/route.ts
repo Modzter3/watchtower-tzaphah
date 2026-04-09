@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       Math.min(50, Number(process.env.CRON_FETCH_BATCH) || 25),
     );
     const skipRelevance = process.env.CRON_SKIP_RELEVANCE === "1";
+    const strictRelevance = process.env.CRON_STRICT_RELEVANCE === "1";
     const articles = raw.slice(0, batchCap);
 
     let inserted = 0;
@@ -73,6 +74,7 @@ export async function GET(request: NextRequest) {
             relevant = await isRelevant(
               article.headline,
               article.full_content.slice(0, 2000),
+              { strict: strictRelevance },
             );
           } catch (e) {
             console.error("isRelevant:", e);
@@ -126,9 +128,10 @@ export async function GET(request: NextRequest) {
       batchSize: articles.length,
       totalFetched: raw.length,
       relevanceFilterOff: skipRelevance,
+      relevanceStrictMode: strictRelevance,
       hint:
         skippedIrrelevant > 0 && !skipRelevance
-          ? "AI marked these as not prophetically relevant. Set CRON_SKIP_RELEVANCE=1 on Vercel to ingest anyway (testing), or raise CRON_FETCH_BATCH to scan more headlines per run."
+          ? "AI marked these as not relevant. Default filter is now inclusive; redeploy latest. Optional: CRON_STRICT_RELEVANCE=1 for fewer inserts, CRON_SKIP_RELEVANCE=1 to skip the filter, or raise CRON_FETCH_BATCH to scan more headlines per run."
           : undefined,
     });
   } catch (error) {
