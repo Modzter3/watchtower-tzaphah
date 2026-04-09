@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "worker": "tsx --env-file=.env.local --env-file=.env scripts/run-worker.ts"
+    "worker": "tsx --env-file=.env.local --env-file=.env scripts/run-worker.ts",
+    "kjv:csv": "node scripts/build-kjv-csv.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.12",

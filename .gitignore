@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local datasets (KJV import)
+.data/
+kjv_verses.csv
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
