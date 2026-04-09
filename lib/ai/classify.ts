@@ -29,6 +29,7 @@ CRITICAL: You must use EXACTLY these keys in your JSON response (camelCase):
 - scriptureReferences (Array of objects with: reference, verseText, relevanceNote, book, chapter, verseStart, verseEnd, isApocrypha)
 - apocryphaReferences (Same structure as scriptureReferences)
 - geolocation (Object with: country, city, region, lat, lng)
+  * region MUST be one of: MIDDLE_EAST, THE_MOTHERLAND, EUROPE, THE_AMERICAS, ASIA_EAST, GLOBAL_SYSTEMIC
 - propheticTimelinePlacement (Must be: SIGNS_OF_THE_TIMES, LATTER_DAYS_NOW, ISRAELS_RESTORATION, BEAST_SYSTEM_RISING, THE_SCATTERING_CONTINUES, or NATIONS_IN_COMMOTION)
 - watchLevel (Number 1-10)
 - deuteronomy28Connection
@@ -40,13 +41,13 @@ CRITICAL: You must use EXACTLY these keys in your JSON response (camelCase):
         content: `Analyze this article through the Hebrew Israelite prophetic lens.
         
 Headline: ${headline}
-Content: ${content.slice(0, 8000)}
+Content: ${content.slice(0, 4000)}
 
 Return ONLY the JSON object.`,
       },
     ],
     response_format: { type: "json_object" },
-    temperature: 0.3, // Much lower for stability
+    temperature: 0.1, // Even lower for extreme stability
   });
 
   const rawJson = response.choices[0]?.message?.content;
