@@ -144,7 +144,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       processed: fromRedis + (fromDb ?? 0),
       source: fromRedis > 0 ? "redis" : "database",
-      debug, // TEMPORARY: remove after fixing
+      debug,
+      serverTime: new Date().toISOString(), // Ensure fresh response
     });
   } catch (e) {
     console.error(e);
