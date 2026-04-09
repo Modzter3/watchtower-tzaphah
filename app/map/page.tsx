@@ -37,7 +37,7 @@ export default function MapPage() {
         <p className="mt-2 max-w-2xl text-sm text-text-secondary">
           Markers use coordinates from the AI pipeline (invalid values are dropped). If the map
           is empty, run <code className="font-mono text-xs">process-queue</code> so articles reach
-          <code className="font-mono text-xs"> COMPLETE</code> with geolocation filled.
+          status <code className="font-mono text-xs">COMPLETE</code> with geolocation filled.
         </p>
       </div>
       <PropheticMap articles={articles} />
