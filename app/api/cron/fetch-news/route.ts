@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     const raw = await fetchAllNews();
     const batchCap = Math.max(
       1,
-      Math.min(50, Number(process.env.CRON_FETCH_BATCH) || 12),
+      Math.min(50, Number(process.env.CRON_FETCH_BATCH) || 25),
     );
     const skipRelevance = process.env.CRON_SKIP_RELEVANCE === "1";
     const articles = raw.slice(0, batchCap);

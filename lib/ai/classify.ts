@@ -2,7 +2,10 @@ import {
   PropheticAnalysisSchema,
   type PropheticAnalysis,
 } from "@/lib/ai/types";
-import { HEBREW_ISRAELITE_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import {
+  HEBREW_ISRAELITE_SYSTEM_PROMPT,
+  RELEVANCE_FILTER_PROMPT,
+} from "@/lib/ai/prompts";
 import { getOpenAI } from "@/lib/ai/openai";
 
 export async function classifyArticle(
@@ -47,16 +50,16 @@ export async function isRelevant(
       {
         role: "system",
         content:
-          "You are a prophetic relevance filter. Respond only with YES or NO.",
+          "You are a prophetic relevance filter. Respond with only YES or NO.",
       },
       {
         role: "user",
-        content: `Does this article have ANY relevance to biblical prophecy from a Hebrew Israelite framework?\n\nHeadline: ${headline}\n\nSnippet: ${snippet}\n\nRespond with only YES or NO.`,
+        content: `${RELEVANCE_FILTER_PROMPT}\n\nHeadline: ${headline}\n\nSnippet: ${snippet.slice(0, 2000)}`,
       },
     ],
-    temperature: 0.3,
+    temperature: 0.25,
   });
 
-  const answer = response.choices[0]?.message?.content?.trim().toUpperCase();
-  return answer === "YES";
+  const raw = response.choices[0]?.message?.content ?? "";
+  return /^\s*YES\b/i.test(raw);
 }

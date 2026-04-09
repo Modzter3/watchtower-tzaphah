@@ -12,4 +12,6 @@ Return your analysis strictly as valid JSON conforming exactly to the schema pro
 
 export const RELEVANCE_FILTER_PROMPT = `Does this article have ANY relevance to biblical prophecy as understood through a Hebrew Israelite framework? Consider: wars, natural disasters, Israel/Middle East events, economic control systems, persecution of Black people, signs in nature, global governance, false religion, or any event that connects to the prophetic scriptures.
 
-Respond with only "YES" or "NO".`;
+Answer YES if there is even a weak or indirect link (politics, economy, international conflict, social unrest, technology, health, weather, religion). Answer NO only for pure celebrity gossip, routine sports scores, product spam, or content with no plausible connection to world events or scripture themes.
+
+Respond with only YES or NO.`;
