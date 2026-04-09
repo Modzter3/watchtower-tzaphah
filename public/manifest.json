@@ -1,0 +1,17 @@
+{
+  "name": "The Watchtower — Tzaphah",
+  "short_name": "Tzaphah",
+  "description": "Prophetic intelligence for scattered Israel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080810",
+  "theme_color": "#c9a84c",
+  "icons": [
+    {
+      "src": "/watchtower-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
