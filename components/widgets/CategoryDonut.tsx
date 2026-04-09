@@ -10,21 +10,44 @@ const KNOWN_CATEGORY_SLUGS = new Set(
   PROPHETIC_CATEGORIES.map((c) => c.slug),
 );
 
+const PIPELINE_STATUSES = new Set(["QUEUED", "PENDING", "FAILED"]);
+
 type DonutSlice = { name: string; value: number; color: string };
 
 export function CategoryDonut() {
   const { articles, loading, apiError } = useArticleData();
 
-  const { chartData, uncategorizedCount } = useMemo(() => {
+  const {
+    chartData,
+    inPipelineCount,
+    completeWithoutCategories,
+    categorizedCount,
+    totalCount,
+  } = useMemo(() => {
     const counts: Record<string, number> = {};
-    let uncategorized = 0;
+    let inPipeline = 0;
+    let completeNoCats = 0;
     let unknownSlugHits = 0;
+
     for (const a of articles) {
+      const status = a.analysis_status ?? "";
       const cats = a.categories ?? [];
-      if (cats.length === 0) {
-        uncategorized++;
+
+      if (PIPELINE_STATUSES.has(status)) {
+        inPipeline++;
         continue;
       }
+
+      if (status === "COMPLETE" && cats.length === 0) {
+        completeNoCats++;
+        continue;
+      }
+
+      if (cats.length === 0) {
+        inPipeline++;
+        continue;
+      }
+
       for (const slug of cats) {
         if (KNOWN_CATEGORY_SLUGS.has(slug)) {
           counts[slug] = (counts[slug] ?? 0) + 1;
@@ -33,42 +56,65 @@ export function CategoryDonut() {
         }
       }
     }
+
     const slices: DonutSlice[] = PROPHETIC_CATEGORIES.map((c) => ({
       name: c.name,
       value: counts[c.slug] ?? 0,
       color: c.color,
     })).filter((d) => d.value > 0);
 
-    if (uncategorized > 0) {
+    if (inPipeline > 0) {
       slices.push({
-        name: "Pending / uncategorized",
-        value: uncategorized,
-        color: "#64748B",
+        name: "In analysis queue",
+        value: inPipeline,
+        color: "#52525B",
       });
     }
-    if (unknownSlugHits > 0) {
+
+    if (completeNoCats > 0) {
       slices.push({
-        name: "Other labels",
-        value: unknownSlugHits,
+        name: "Complete — no tags",
+        value: completeNoCats,
         color: "#78716C",
       });
     }
 
-    const chartData =
+    if (unknownSlugHits > 0) {
+      slices.push({
+        name: "Other labels",
+        value: unknownSlugHits,
+        color: "#A8A29E",
+      });
+    }
+
+    const categorized = Object.values(counts).reduce((s, n) => s + n, 0);
+    const chartData: DonutSlice[] =
       slices.length > 0
         ? slices
         : articles.length === 0
           ? [{ name: "No articles yet", value: 1, color: "#334155" }]
-          : [{ name: "No categories assigned", value: 1, color: "#475569" }];
+          : [{ name: "Awaiting first run", value: 1, color: "#475569" }];
 
-    return { chartData, uncategorizedCount: uncategorized };
+    return {
+      chartData,
+      inPipelineCount: inPipeline,
+      completeWithoutCategories: completeNoCats,
+      categorizedCount: categorized + unknownSlugHits,
+      totalCount: articles.length,
+    };
   }, [articles]);
+
+  const showQueueBanner = inPipelineCount > 0 && totalCount > 0;
+  const showDataNote =
+    !showQueueBanner &&
+    completeWithoutCategories > 0 &&
+    totalCount > 0;
 
   if (loading) {
     return (
-      <section className="rounded-lg border border-accent-gold/20 bg-background-surface p-4">
+      <section className="rounded-xl border border-accent-gold/20 bg-background-surface/40 p-4">
         <h2 className="mb-2 font-cinzel text-sm tracking-widest text-accent-gold">
-          Category Mix
+          Prophetic_Mix
         </h2>
         <Skeleton className="h-56 w-full rounded-lg" />
       </section>
@@ -77,39 +123,53 @@ export function CategoryDonut() {
 
   if (apiError) {
     return (
-      <section className="rounded-lg border border-red-900/30 bg-background-surface p-4">
+      <section className="rounded-xl border border-red-900/30 bg-background-surface/40 p-4">
         <h2 className="mb-2 font-cinzel text-sm tracking-widest text-accent-gold">
-          Category Mix
+          Prophetic_Mix
         </h2>
-        <p className="text-xs text-red-300/90">Could not load article mix.</p>
+        <p className="text-xs text-red-300/90">Could not load articles.</p>
       </section>
     );
   }
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-accent-gold/20 bg-background-surface/40 backdrop-blur-md p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all hover:border-accent-gold/40">
-      {/* HUD Elements */}
-      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-accent-gold/30 rounded-bl-lg" />
-      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-accent-gold/30 rounded-br-lg" />
+      <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-2 border-l-2 border-accent-gold/30" />
+      <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br-lg border-b-2 border-r-2 border-accent-gold/30" />
 
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-cinzel text-[10px] font-black tracking-[0.3em] text-accent-gold uppercase text-glow-gold">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="font-cinzel text-[10px] font-black uppercase tracking-[0.3em] text-accent-gold text-glow-gold">
           Prophetic_Mix
         </h2>
-        <div className="h-2 w-2 rounded-full bg-accent-gold/20 animate-pulse" />
+        <div className="h-2 w-2 animate-pulse rounded-full bg-accent-gold/20" />
       </div>
 
-      {uncategorizedCount > 0 &&
-      chartData.some((d) => d.name !== "Pending / uncategorized") ? (
-        <div className="mb-4 flex items-center gap-2 p-2 rounded bg-amber-500/5 border border-amber-500/10">
-          <span className="text-amber-500 animate-pulse">⚠️</span>
-          <p className="text-[9px] font-mono leading-tight text-amber-200/70 uppercase">
-            Data_Incomplete: Run queue for full analysis.
+      {showQueueBanner ? (
+        <div className="mb-4 flex items-center gap-3 rounded border border-amber-500/10 bg-amber-500/5 p-3 shadow-[inset_0_0_10px_rgba(245,158,11,0.05)]">
+          <span className="text-xs text-amber-500">⚠️</span>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-200/90">
+              {inPipelineCount} article{inPipelineCount === 1 ? "" : "s"} still in the analysis queue
+            </p>
+            <p className="text-[8px] font-mono uppercase text-amber-200/50">
+              Run process-queue until none are QUEUED or FAILED.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      {showDataNote ? (
+        <div className="mb-4 rounded border border-white/10 bg-white/[0.03] p-3">
+          <p className="text-[10px] text-text-secondary">
+            {completeWithoutCategories} article
+            {completeWithoutCategories === 1 ? " is" : "s are"} marked COMPLETE but have no category
+            rows. Re-run{" "}
+            <code className="font-mono text-[9px]">process-queue</code> or fix in Supabase.
           </p>
         </div>
       ) : null}
 
-      <div className="h-64 w-full relative">
+      <div className="relative h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -122,9 +182,9 @@ export function CategoryDonut() {
               stroke="none"
             >
               {chartData.map((entry, i) => (
-                <Cell 
-                  key={`${entry.name}-${i}`} 
-                  fill={entry.color} 
+                <Cell
+                  key={`${entry.name}-${i}`}
+                  fill={entry.color}
                   className="filter drop-shadow-[0_0_8px_rgba(201,168,76,0.2)]"
                 />
               ))}
@@ -136,30 +196,32 @@ export function CategoryDonut() {
                 borderRadius: "8px",
                 backdropFilter: "blur(12px)",
                 fontSize: "10px",
-                fontFamily: "var(--font-mono)"
+                fontFamily: "var(--font-mono)",
               }}
               itemStyle={{ color: "#EDE9D8" }}
             />
-            <Legend 
-              wrapperStyle={{ 
-                fontSize: 9, 
-                fontFamily: "var(--font-mono)", 
+            <Legend
+              wrapperStyle={{
+                fontSize: 9,
+                fontFamily: "var(--font-mono)",
                 textTransform: "uppercase",
                 letterSpacing: "1px",
-                paddingTop: "20px"
-              }} 
+                paddingTop: "20px",
+              }}
               verticalAlign="bottom"
             />
           </PieChart>
         </ResponsiveContainer>
-        {/* Center overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <span className="block font-mono text-[8px] tracking-[0.2em] text-accent-gold/40 uppercase">
-              Total_Events
+            <span className="block font-mono text-[8px] uppercase tracking-[0.2em] text-accent-gold/40">
+              Categorized
             </span>
             <span className="font-cinzel text-2xl font-black text-text-primary">
-              {articles.length}
+              {categorizedCount}
+            </span>
+            <span className="mt-0.5 block font-mono text-[8px] text-text-secondary/60">
+              of {totalCount} loaded
             </span>
           </div>
         </div>

@@ -17,6 +17,7 @@ const TIMELINE_FALLBACK_SLUG: Partial<
   BEAST_SYSTEM_RISING: "beast-system",
   THE_SCATTERING_CONTINUES: "deut28-curses",
   NATIONS_IN_COMMOTION: "wars-and-rumors",
+  UNKNOWN: "wars-and-rumors",
 };
 
 function normalizeCategorySlug(raw: string): CategorySlug | null {
@@ -120,11 +121,13 @@ export async function persistPropheticAnalysis(
     if (fb) slugs = [fb];
   }
 
-  if (slugs.length > 0) {
-    await supabase.from("article_categories").insert(
-      slugs.map((category_slug) => ({ article_id: articleId, category_slug })),
-    );
+  if (slugs.length === 0) {
+    slugs = ["wars-and-rumors"];
   }
+
+  await supabase.from("article_categories").insert(
+    slugs.map((category_slug) => ({ article_id: articleId, category_slug })),
+  );
 
   await supabase
     .from("scripture_references")
