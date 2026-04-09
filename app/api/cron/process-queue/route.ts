@@ -8,7 +8,7 @@ import type { UrgencyLevel } from "@/lib/types/article";
 
 export const maxDuration = 300;
 
-const BATCH = 8;
+const BATCH = 4; // Reduced from 8 for safer timeouts on Vercel Hobby
 
 function cronErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -44,8 +44,16 @@ async function processFromDatabase(): Promise<number> {
   if (!queued?.length) return 0;
   let done = 0;
   for (const row of queued) {
-    const r = await processArticleClassification(row.id as string);
-    if (r.ok) done++;
+    try {
+      const r = await processArticleClassification(row.id as string);
+      if (r.ok) {
+        done++;
+      } else {
+        console.warn(`Classification failed for article ${row.id}: ${r.error}`);
+      }
+    } catch (e) {
+      console.error(`Unexpected error processing article ${row.id}:`, e);
+    }
   }
   return done;
 }

@@ -15,7 +15,7 @@ export async function classifyArticle(
 ): Promise<PropheticAnalysis> {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini", // Switched from gpt-4o for speed, cost, and timeout safety
     messages: [
       {
         role: "system",
@@ -33,7 +33,7 @@ Return ONLY valid JSON, no additional text.`,
       },
     ],
     response_format: { type: "json_object" },
-    temperature: 0.7,
+    temperature: 0.6, // Slightly lower for more deterministic JSON
   });
 
   const rawJson = response.choices[0]?.message?.content;
