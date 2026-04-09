@@ -21,24 +21,28 @@ export function getClassificationQueue(): Queue | null {
 export async function queueArticleForClassification(
   articleId: string,
 ): Promise<void> {
-  const queue = getClassificationQueue();
-  if (queue) {
-    await queue.add(
-      "classify",
-      { articleId },
-      {
-        attempts: 3,
-        backoff: { type: "exponential", delay: 2000 },
-      },
-    );
-    return;
+  try {
+    const queue = getClassificationQueue();
+    if (queue) {
+      await queue.add(
+        "classify",
+        { articleId },
+        {
+          attempts: 3,
+          backoff: { type: "exponential", delay: 2000 },
+        },
+      );
+      return;
+    }
+
+    const redis = getUpstashRestRedis();
+    if (redis) {
+      await redis.rpush("tzaphah:classification_queue", articleId);
+      return;
+    }
+  } catch (e) {
+    console.error("queueArticleForClassification:", e);
   }
 
-  const redis = getUpstashRestRedis();
-  if (redis) {
-    await redis.rpush("tzaphah:classification_queue", articleId);
-    return;
-  }
-
-  /* No queue backend: article stays analysis_status QUEUED until /api/cron/process-queue runs. */
+  /* No queue backend or queue failed: article stays QUEUED for process-queue cron. */
 }
