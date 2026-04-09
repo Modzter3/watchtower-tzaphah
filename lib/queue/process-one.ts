@@ -17,10 +17,17 @@ export async function processArticleClassification(
     return { ok: false, error: "Article not found" };
   }
 
+  // Fetch active tracker items to provide context to the AI
+  const { data: trackerItems } = await supabase
+    .from("prophecy_tracker")
+    .select("id, title")
+    .in("status", ["IN_PROGRESS", "WATCHING", "PENDING"]);
+
   try {
     const analysis = await classifyArticle(
       article.headline as string,
       (article.full_content as string) || "",
+      trackerItems ?? [],
     );
     await persistPropheticAnalysis(supabase, articleId, analysis, {
       headline: article.headline as string,

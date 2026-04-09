@@ -151,4 +151,14 @@ export async function persistPropheticAnalysis(
       })),
     );
   }
+
+  // Create suggested tracker links
+  if (analysis.suggestedTrackerIds && analysis.suggestedTrackerIds.length > 0) {
+    await supabase.from("prophecy_article_links").insert(
+      analysis.suggestedTrackerIds.map((tid) => ({
+        article_id: articleId,
+        prophecy_id: tid,
+      })),
+    );
+  }
 }

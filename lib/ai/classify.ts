@@ -12,14 +12,21 @@ import { getOpenAI } from "@/lib/ai/openai";
 export async function classifyArticle(
   headline: string,
   content: string,
+  trackerContext?: { id: string; title: string }[],
 ): Promise<PropheticAnalysis> {
   const openai = getOpenAI();
+
+  const trackerPrompt = trackerContext?.length
+    ? `\n\nAVAILABLE TRACKER ITEMS (Suggest matching IDs in suggestedTrackerIds if the story directly links to one of these prophetic milestones):
+${trackerContext.map((t) => `- ${t.id}: ${t.title}`).join("\n")}`
+    : "";
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini", // Switched from gpt-4o for speed, cost, and timeout safety
     messages: [
       {
         role: "system",
-        content: `${HEBREW_ISRAELITE_SYSTEM_PROMPT}\n\n${CLASSIFY_CATEGORY_SLUG_RULE}
+        content: `${HEBREW_ISRAELITE_SYSTEM_PROMPT}\n\n${CLASSIFY_CATEGORY_SLUG_RULE}${trackerPrompt}
 
 CRITICAL: You must use EXACTLY these keys in your JSON response (camelCase):
 - propheticSummary
@@ -34,7 +41,8 @@ CRITICAL: You must use EXACTLY these keys in your JSON response (camelCase):
 - watchLevel (Number 1-10)
 - deuteronomy28Connection
 - isApocryphaConnected (Boolean)
-- watchmanNote`,
+- watchmanNote
+- suggestedTrackerIds (Array of UUID strings from the provided list, if relevant)`,
       },
       {
         role: "user",

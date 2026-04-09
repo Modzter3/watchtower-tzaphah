@@ -57,6 +57,7 @@ export const PropheticAnalysisSchema = z.object({
   deuteronomy28Connection: z.string().nullable(),
   isApocryphaConnected: z.boolean(),
   watchmanNote: z.string(),
+  suggestedTrackerIds: z.array(z.string()).optional(),
 });
 
 export type PropheticAnalysis = z.infer<typeof PropheticAnalysisSchema>;
