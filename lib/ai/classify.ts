@@ -19,17 +19,30 @@ export async function classifyArticle(
     messages: [
       {
         role: "system",
-        content: `${HEBREW_ISRAELITE_SYSTEM_PROMPT}\n\n${CLASSIFY_CATEGORY_SLUG_RULE}`,
+        content: `${HEBREW_ISRAELITE_SYSTEM_PROMPT}\n\n${CLASSIFY_CATEGORY_SLUG_RULE}
+
+CRITICAL: You must use EXACTLY these keys in your JSON response (camelCase):
+- propheticSummary
+- categories
+- urgencyLevel (Must be: COVENANT_ALARM, SIGNIFICANT_SIGN, WORTHY_OF_WATCH, or MONITORING)
+- urgencyReason
+- scriptureReferences (Array of objects with: reference, verseText, relevanceNote, book, chapter, verseStart, verseEnd, isApocrypha)
+- apocryphaReferences (Same structure as scriptureReferences)
+- geolocation (Object with: country, city, region, lat, lng)
+- propheticTimelinePlacement (Must be: SIGNS_OF_THE_TIMES, LATTER_DAYS_NOW, ISRAELS_RESTORATION, BEAST_SYSTEM_RISING, THE_SCATTERING_CONTINUES, or NATIONS_IN_COMMOTION)
+- watchLevel (Number 1-10)
+- deuteronomy28Connection
+- isApocryphaConnected (Boolean)
+- watchmanNote`,
       },
       {
         role: "user",
-        content: `Analyze this article and return a JSON object matching the PropheticAnalysis schema:
-
+        content: `Analyze this article through the Hebrew Israelite prophetic lens.
+        
 Headline: ${headline}
-
 Content: ${content.slice(0, 8000)}
 
-Return ONLY valid JSON, no additional text.`,
+Return ONLY the JSON object.`,
       },
     ],
     response_format: { type: "json_object" },

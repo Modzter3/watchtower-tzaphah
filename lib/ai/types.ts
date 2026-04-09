@@ -22,7 +22,7 @@ export const PropheticAnalysisSchema = z.object({
   ]),
   urgencyReason: z.string(),
   scriptureReferences: z.array(ScriptureReferenceSchema),
-  apocryphaReferences: z.array(ScriptureReferenceSchema).optional(),
+  apocryphaReferences: z.array(ScriptureReferenceSchema).optional().nullable(),
   geolocation: z.object({
     country: z.string(),
     city: z.string().nullable(),
