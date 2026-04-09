@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ articles });
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : "Failed to load articles";
     return NextResponse.json(
-      { error: "Failed to load articles", articles: [] },
+      { error: "Failed to load articles", message, articles: [] },
       { status: 500 },
     );
   }

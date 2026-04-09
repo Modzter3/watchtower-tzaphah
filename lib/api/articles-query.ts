@@ -26,7 +26,10 @@ export async function fetchArticlesEnriched(
   }
 
   const { data: rows, error } = await q;
-  if (error || !rows?.length) return [];
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!rows?.length) return [];
 
   const ids = rows.map((r) => r.id as string);
 

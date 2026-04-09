@@ -7,29 +7,57 @@ import { ArticleCard } from "@/components/feed/ArticleCard";
 import { ArticleDrawer } from "@/components/feed/ArticleDrawer";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-function loadArticles(): Promise<ArticleWithRelations[]> {
-  return fetch("/api/articles?limit=50")
-    .then((r) => r.json())
-    .then((d: { articles?: ArticleWithRelations[] }) => d.articles ?? []);
+async function loadArticles(): Promise<{
+  articles: ArticleWithRelations[];
+  apiError: string | null;
+}> {
+  const r = await fetch("/api/articles?limit=50");
+  const d = (await r.json()) as {
+    articles?: ArticleWithRelations[];
+    message?: string;
+    error?: string;
+  };
+  if (!r.ok) {
+    return {
+      articles: [],
+      apiError: d.message ?? d.error ?? `HTTP ${r.status}`,
+    };
+  }
+  return { articles: d.articles ?? [], apiError: null };
 }
 
 export function ArticleFeed() {
   const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ArticleWithRelations | null>(null);
 
   const silentRefresh = useCallback(() => {
-    loadArticles().then(setArticles).catch(() => setArticles([]));
+    loadArticles()
+      .then(({ articles: next, apiError: err }) => {
+        setArticles(next);
+        setApiError(err);
+      })
+      .catch(() => {
+        setArticles([]);
+        setApiError("Network error");
+      });
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     loadArticles()
-      .then((data) => {
-        if (!cancelled) setArticles(data);
+      .then(({ articles: data, apiError: err }) => {
+        if (!cancelled) {
+          setArticles(data);
+          setApiError(err);
+        }
       })
       .catch(() => {
-        if (!cancelled) setArticles([]);
+        if (!cancelled) {
+          setArticles([]);
+          setApiError("Network error");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -72,20 +100,51 @@ export function ArticleFeed() {
     );
   }
 
+  if (apiError) {
+    return (
+      <div className="rounded-lg border border-red-900/50 bg-background-surface p-10 text-center">
+        <p className="font-cinzel text-red-400">Feed could not load</p>
+        <p className="mt-2 font-mono text-xs text-text-secondary break-all">{apiError}</p>
+        <p className="mt-4 text-sm text-text-secondary">
+          Check Vercel env:{" "}
+          <code className="rounded bg-background-base px-1">
+            NEXT_PUBLIC_SUPABASE_URL
+          </code>{" "}
+          and{" "}
+          <code className="rounded bg-background-base px-1">
+            SUPABASE_SERVICE_ROLE_KEY
+          </code>
+          , then redeploy.
+        </p>
+      </div>
+    );
+  }
+
   if (articles.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-accent-gold/30 bg-background-surface p-10 text-center text-text-secondary">
         <p className="font-cinzel text-accent-gold">No articles yet</p>
         <p className="mt-2 text-sm">
-          Configure Supabase, run{" "}
+          If Supabase and keys are already set, the{" "}
           <code className="rounded bg-background-base px-1 font-mono text-xs">
-            schema.sql
-          </code>
-          , set API keys, then trigger{" "}
+            articles
+          </code>{" "}
+          table is empty. Trigger your external cron (or once manually):{" "}
           <code className="rounded bg-background-base px-1 font-mono text-xs">
-            /api/cron/fetch-news
+            GET /api/cron/fetch-news
+          </code>{" "}
+          then{" "}
+          <code className="rounded bg-background-base px-1 font-mono text-xs">
+            GET /api/cron/process-queue
+          </code>{" "}
+          with{" "}
+          <code className="rounded bg-background-base px-1 font-mono text-xs">
+            Authorization: Bearer CRON_SECRET
           </code>
-          .
+          . News + OpenAI keys must be set on the server. The AI relevance step may skip
+          many headlines; check cron response for{" "}
+          <code className="font-mono text-xs">inserted</code> /{" "}
+          <code className="font-mono text-xs">skipped</code>.
         </p>
       </div>
     );
