@@ -32,16 +32,41 @@ async function processFromRedis(): Promise<number> {
   return done;
 }
 
-async function processFromDatabase(): Promise<number> {
+async function processFromDatabase(): Promise<{ done: number; debug?: any }> {
   const supabase = createSupabaseAdminClient();
-  const { data: queued } = await supabase
+
+  // Debug: Check total counts by status
+  const { data: counts, error: countErr } = await supabase
+    .from("articles")
+    .select("analysis_status");
+
+  const debug: any = {
+    total: counts?.length ?? 0,
+    statuses: {},
+    error: countErr,
+  };
+
+  if (counts) {
+    for (const c of counts) {
+      const s = c.analysis_status || "NULL";
+      debug.statuses[s] = (debug.statuses[s] ?? 0) + 1;
+    }
+  }
+
+  const { data: queued, error: fetchErr } = await supabase
     .from("articles")
     .select("id")
     .in("analysis_status", ["QUEUED", "FAILED"]) // Retry failed ones too
     .order("created_at", { ascending: true })
     .limit(BATCH);
 
-  if (!queued?.length) return 0;
+  if (fetchErr) {
+    debug.fetchError = fetchErr;
+    return { done: 0, debug };
+  }
+
+  if (!queued?.length) return { done: 0, debug };
+
   let done = 0;
   for (const row of queued) {
     try {
@@ -50,12 +75,14 @@ async function processFromDatabase(): Promise<number> {
         done++;
       } else {
         console.warn(`Classification failed for article ${row.id}: ${r.error}`);
+        if (!debug.failures) debug.failures = [];
+        debug.failures.push({ id: row.id, error: r.error });
       }
     } catch (e) {
       console.error(`Unexpected error processing article ${row.id}:`, e);
     }
   }
-  return done;
+  return { done, debug };
 }
 
 async function refreshTzaphahIndex(): Promise<void> {
@@ -112,11 +139,12 @@ export async function GET(request: NextRequest) {
     }
 
     const fromRedis = await processFromRedis();
-    const fromDb = fromRedis === 0 ? await processFromDatabase() : 0;
+    const { done: fromDb, debug } = fromRedis === 0 ? await processFromDatabase() : { done: 0 };
     await refreshTzaphahIndex();
     return NextResponse.json({
-      processed: fromRedis + fromDb,
+      processed: fromRedis + (fromDb ?? 0),
       source: fromRedis > 0 ? "redis" : "database",
+      debug, // TEMPORARY: remove after fixing
     });
   } catch (e) {
     console.error(e);
