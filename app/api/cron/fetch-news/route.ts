@@ -43,10 +43,14 @@ export async function GET(request: NextRequest) {
       1,
       Math.min(50, Number(process.env.CRON_FETCH_BATCH) || 12),
     );
+    const skipRelevance = process.env.CRON_SKIP_RELEVANCE === "1";
     const articles = raw.slice(0, batchCap);
 
     let inserted = 0;
     let skipped = 0;
+    let skippedDuplicate = 0;
+    let skippedIrrelevant = 0;
+    let skippedInsertFailed = 0;
     let errors = 0;
 
     for (const article of articles) {
@@ -59,23 +63,27 @@ export async function GET(request: NextRequest) {
 
         if (existing) {
           skipped++;
+          skippedDuplicate++;
           continue;
         }
 
-        let relevant: boolean;
-        try {
-          relevant = await isRelevant(
-            article.headline,
-            article.full_content.slice(0, 2000),
-          );
-        } catch (e) {
-          console.error("isRelevant:", e);
-          errors++;
-          continue;
+        let relevant = true;
+        if (!skipRelevance) {
+          try {
+            relevant = await isRelevant(
+              article.headline,
+              article.full_content.slice(0, 2000),
+            );
+          } catch (e) {
+            console.error("isRelevant:", e);
+            errors++;
+            continue;
+          }
         }
 
         if (!relevant) {
           skipped++;
+          skippedIrrelevant++;
           continue;
         }
 
@@ -96,6 +104,7 @@ export async function GET(request: NextRequest) {
 
         if (error || !newArticle) {
           skipped++;
+          skippedInsertFailed++;
           continue;
         }
 
@@ -110,9 +119,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       inserted,
       skipped,
+      skippedDuplicate,
+      skippedIrrelevant,
+      skippedInsertFailed,
       errors,
       batchSize: articles.length,
       totalFetched: raw.length,
+      relevanceFilterOff: skipRelevance,
+      hint:
+        skippedIrrelevant > 0 && !skipRelevance
+          ? "AI marked these as not prophetically relevant. Set CRON_SKIP_RELEVANCE=1 on Vercel to ingest anyway (testing), or raise CRON_FETCH_BATCH to scan more headlines per run."
+          : undefined,
     });
   } catch (error) {
     console.error("Cron error:", error);
